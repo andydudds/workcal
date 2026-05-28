@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WORK CAL</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --cardinal:    #D21242;
+      --space-cadet: #0A2E36;
+      --lapis:       #175676;
+      --celestial:   #128FD2;
+      --mint:        #12D2A2;
+      --champagne:   #F5E2C8;
+      --white:       #FFFFFF;
+      --off-white:   #FAFAF8;
+      --gray-100:    #F4F4F2;
+      --gray-200:    #E8E8E4;
+      --gray-600:    #666;
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--off-white);
+      color: var(--space-cadet);
+      margin: 0;
+    }
+
+    header {
+      background: var(--white);
+      border-bottom: 2px solid var(--gray-100);
+      padding: 18px 28px 14px;
+    }
+
+    .header-wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .header-asterisk {
+      font-family: Verdana, Geneva, sans-serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--cardinal);
+      line-height: 1;
+    }
+
+    .header-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      color: var(--space-cadet);
+      line-height: 1;
+    }
+
+    .header-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 0.78rem;
+      color: var(--gray-600);
+      margin-top: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 16px 24px;
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    nav button {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--gray-600);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0 0 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    nav button:hover {
+      color: var(--space-cadet);
+    }
+
+    nav button.active {
+      color: var(--cardinal);
+      border-bottom-color: var(--cardinal);
+    }
+
+    /* ── View sections ── */
+    .view {
+      display: none;
+      padding: 32px;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .view h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin: 0 0 12px;
+      color: var(--space-cadet);
+    }
+
+    .view p {
+      font-family: 'Lato', sans-serif;
+      font-weight: 400;
+      color: var(--gray-600);
+      margin: 0;
+    }
+
+    /* ── Home view ─────────────────────────────────────────────────────────── */
+    .home-card {
+      border-radius: 8px;
+      padding: 32px;
+      max-width: 480px;
+      margin: 24px;
+    }
+
+    .home-card .big-number {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 48px;
+      line-height: 1;
+      margin: 0 0 6px;
+    }
+
+    .home-card .target-label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      margin: 0 0 12px;
+    }
+
+    .home-card .band-label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 12px;
+    }
+
+    .home-card .breakdown-line {
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      margin: 0;
+      opacity: 0.75;
+    }
+
+    /* band color variants */
+    .home-card.band-under  { background: var(--mint);      }
+    .home-card.band-at     { background: var(--champagne); }
+    .home-card.band-over   { background: var(--celestial); }
+    .home-card.band-unsust { background: var(--cardinal);  }
+
+    .home-card.band-under  .big-number,
+    .home-card.band-under  .target-label,
+    .home-card.band-under  .band-label  { color: var(--space-cadet); }
+
+    .home-card.band-at     .big-number,
+    .home-card.band-at     .target-label,
+    .home-card.band-at     .band-label  { color: var(--space-cadet); }
+
+    .home-card.band-over   .big-number,
+    .home-card.band-over   .target-label,
+    .home-card.band-over   .band-label  { color: var(--white); }
+
+    .home-card.band-unsust .big-number,
+    .home-card.band-unsust .target-label,
+    .home-card.band-unsust .band-label  { color: var(--white); }
+
+    /* nav tiles */
+    .nav-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 720px;
+      margin: 8px 24px 24px;
+    }
+
+    @media (max-width: 600px) {
+      .nav-tiles {
+        grid-template-columns: 1fr;
+      }
+      .home-card {
+        margin: 16px;
+      }
+    }
+
+    .nav-tile {
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 24px;
+      background: var(--white);
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--space-cadet);
+      text-align: left;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .nav-tile:hover {
+      color: var(--cardinal);
+      border-color: var(--cardinal);
+    }
+
+    /* ── List view ─────────────────────────────────────────────────────────── */
+    .list-summary {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin: 0 0 16px;
+    }
+
+    .list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+    }
+
+    .list-table thead th {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--gray-600);
+      text-align: left;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      white-space: nowrap;
+    }
+
+    .list-table tbody tr {
+      border-bottom: 1px solid var(--gray-200);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .list-table tbody tr:hover {
+      background: var(--off-white);
+    }
+
+    .list-table tbody td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+
+    .cat-pill {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+    }
+
+    .cat-finance  { background: var(--lapis);     color: var(--white);       }
+    .cat-people   { background: var(--celestial); color: var(--white);       }
+    .cat-programs { background: var(--mint);      color: var(--space-cadet); }
+    .cat-board    { background: var(--cardinal);  color: var(--white);       }
+    .cat-personal { background: var(--champagne); color: var(--space-cadet); }
+    .cat-it       { background: var(--gray-600);  color: var(--white);       }
+    .cat-admin    { background: var(--gray-600);  color: var(--white);       }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .status-dot.on  { background: var(--mint);     }
+    .status-dot.off { background: var(--gray-200); }
+
+    /* ── Workstreams editor ──────────────────────────────────────────────── */
+    .ws-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .ws-section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 24px;
+      color: var(--space-cadet);
+    }
+
+    .ws-add-btn {
+      background: var(--cardinal);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .ws-add-btn:hover { background: #a80d32; }
+
+    .ws-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 12px;
+      max-width: 720px;
+    }
+
+    .ws-card.ws-card-inactive { background: var(--gray-100); }
+
+    .ws-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .ws-card-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ws-card-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--space-cadet);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ws-card-meta {
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .ws-card-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    /* Toggle pill */
+    .ws-toggle {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      background: var(--gray-200);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      margin: 0;
+    }
+
+    .ws-toggle:checked { background: var(--mint); }
+
+    .ws-toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--white);
+      top: 3px;
+      left: 3px;
+      transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .ws-toggle:checked::after { left: 19px; }
+
+    /* Edit button on card */
+    .ws-edit-btn {
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--gray-600);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    .ws-edit-btn:hover { color: var(--cardinal); }
+
+    /* Inline edit form */
+    .ws-form {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .ws-form-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .ws-form-row label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      width: 110px;
+      flex-shrink: 0;
+      padding-top: 8px;
+    }
+
+    .ws-form-row input[type="text"],
+    .ws-form-row input[type="time"],
+    .ws-form-row input[type="number"],
+    .ws-form-row select,
+    .ws-form-row textarea {
+      flex: 1;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      color: var(--space-cadet);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .ws-form-row input:focus,
+    .ws-form-row select:focus,
+    .ws-form-row textarea:focus { border-color: var(--celestial); }
+
+    .ws-form-row textarea { resize: vertical; }
+
+    .ws-form-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-save {
+      background: var(--cardinal);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 7px 18px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-save:hover { background: #a80d32; }
+
+    .btn-cancel {
+      background: none;
+      color: var(--space-cadet);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 7px 18px;
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .btn-cancel:hover { border-color: var(--gray-600); }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--gray-600);
+      cursor: pointer;
+      margin-left: auto;
+      padding: 7px 4px;
+      transition: color 0.15s;
+    }
+
+    .btn-delete:hover { color: var(--cardinal); }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-wordmark">
+      <span class="header-asterisk">*</span>
+      <span class="header-title">WORK CAL</span>
+    </div>
+    <div class="header-sub">Andy Duddleston &middot; COO/Interim CFO &middot; i.c.stars</div>
+  </header>
+
+  <nav id="main-nav">
+    <button class="nav-tab active" data-view="home">Home</button>
+    <button class="nav-tab" data-view="day">Day</button>
+    <button class="nav-tab" data-view="week">Week</button>
+    <button class="nav-tab" data-view="list">List</button>
+    <button class="nav-tab" data-view="annual">Annual</button>
+    <button class="nav-tab" data-view="hours">Hours</button>
+    <button class="nav-tab" data-view="workstreams">Workstreams</button>
+  </nav>
+
+  <main>
+    <section id="view-home" class="view active">
+    </section>
+
+    <section id="view-day" class="view">
+      <h2>Day</h2>
+      <p>Coming soon.</p>
+    </section>
+
+    <section id="view-week" class="view">
+      <h2>Week</h2>
+      <p>Coming soon.</p>
+    </section>
+
+    <section id="view-list" class="view">
+    </section>
+
+    <section id="view-annual" class="view">
+      <h2>Annual</h2>
+      <p>Coming soon.</p>
+    </section>
+
+    <section id="view-hours" class="view">
+      <h2>Hours</h2>
+      <p>Coming soon.</p>
+    </section>
+
+    <section id="view-workstreams" class="view">
+    </section>
+  </main>
+
+  <script>
+    (function () {
+
+      // ── Data defaults ──────────────────────────────────────────────────────
+
+      var SETTINGS = {
+        workingHoursStart:            "08:30",
+        workingHoursEnd:              "18:00",
+        timezone:                     "America/New_York",
+        weeklyTargetHours:            40,
+        emailHoursPerDay:             1,
+        adHocHoursPerWeek:            3.5,
+        dailyBreakMinutes:            30,
+        familyDropOffMinutesInWindow: 30,
+        familyDropOffDaysPerWeek:     5,
+        familyPickupMinutes:          60,
+        familyPickupDaysPerWeek:      2
+      };
+
+      var SETTINGS_HOURS_CONTRIB = {
+        emailHoursPerWeek:        5.0,   // 1 hr/day x 5 days (v5 Section 7)
+        adHocHoursPerWeek:        3.5,   // ad-hoc reviews, fire drills (v5 Section 7)
+        familyPickupHoursPerWeek: 2.0    // 60 min x 2 days Tue+Thu (v5 Section 7)
+      };
+
+      var RECURRING_BLOCKS = [
+        {
+          id: "slt-weekly",
+          name: "Weekly SLT (First Team)",
+          category: "people",
+          cadence: "weekly",
+          dayOfWeek: 4,
+          startTime: "16:00",
+          duration: 60,
+          hoursEstimate: 1.0,
+          active: true,
+          notes: "Thu 4:00p per v5. Optional for Andy but SLT required."
+        },
+        {
+          id: "elt-strategy",
+          name: "ELT Strategy Meeting",
+          category: "people",
+          cadence: "weekly",
+          dayOfWeek: 4,
+          startTime: "09:30",
+          duration: 60,
+          hoursEstimate: 1.0,
+          active: true,
+          notes: "Thu 9:30a per v5. Ownership needs reassignment from Karin to Meg."
+        },
+        {
+          id: "meg-1on1",
+          name: "Meg 1:1",
+          category: "people",
+          cadence: "weekly",
+          dayOfWeek: 2,
+          startTime: "10:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Day/time not in v5. Placed Tue 10:00a as placeholder - confirm with Meg."
+        },
+        {
+          id: "dawn-1on1",
+          name: "Dawn/Andy 1:1",
+          category: "people",
+          cadence: "weekly",
+          dayOfWeek: 2,
+          startTime: "13:00",
+          duration: 45,
+          hoursEstimate: 0.75,
+          active: false,
+          notes: "Removed May 27 2026 - Dawn no longer reports to Andy (now reports to Meg)."
+        },
+        {
+          id: "amanda-1on1",
+          name: "Andy/Amanda Weekly",
+          category: "people",
+          cadence: "weekly",
+          dayOfWeek: 2,
+          startTime: "15:00",
+          duration: 60,
+          hoursEstimate: 1.0,
+          active: true,
+          notes: "Tue 3:00p per v5. Direct report, work and development per new plan."
+        },
+        {
+          id: "larry-1on1",
+          name: "Larry 1:1",
+          category: "it",
+          cadence: "weekly",
+          dayOfWeek: 3,
+          startTime: "14:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Day/time not in v5 as a standalone 1:1. Placed Wed 2:00p as placeholder - confirm with Larry."
+        },
+        {
+          id: "souley-1on1",
+          name: "Souley 1:1",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 1,
+          startTime: "14:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Mon PM per v5. QB, cash, AR posting."
+        },
+        {
+          id: "city-ed-standup",
+          name: "City ED Standup",
+          category: "programs",
+          cadence: "weekly",
+          dayOfWeek: 3,
+          startTime: "09:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Day/time not in v5. Placed Wed 9:00a as placeholder - confirm schedule."
+        },
+        {
+          id: "bills-review-mon",
+          name: "Review/Approve Bills (Mon)",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 1,
+          startTime: "09:00",
+          duration: 60,
+          hoursEstimate: 1.0,
+          active: true,
+          notes: "Mon 9:00a per v5. AR/AP review, bill approval, cash position scan. Replaces daily Ramp queue glance."
+        },
+        {
+          id: "bills-review-fri",
+          name: "Review/Approve Bills (Fri)",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 5,
+          startTime: "09:00",
+          duration: 60,
+          hoursEstimate: 1.0,
+          active: true,
+          notes: "Fri 9:00a per v5. AR/AP review, bill approval, cash position scan."
+        },
+        {
+          id: "ar-review-mon",
+          name: "AR Review",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 1,
+          startTime: "10:30",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Mon AM per v5. Last eyes on automated AR Summary before tool sends. Placed 10:30a to follow bills review block."
+        },
+        {
+          id: "cash-position-fri",
+          name: "Cash Position to Meg",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 5,
+          startTime: "15:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Fri PM per v5. End-of-week cash position flash to Meg."
+        },
+        {
+          id: "meg-finance-touchpoint",
+          name: "Meg Finance Touchpoint",
+          category: "finance",
+          cadence: "weekly",
+          dayOfWeek: 3,
+          startTime: "11:00",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Weekly or biweekly per v5. Placed Wed 11:00a as placeholder. May fold into Meg 1:1."
+        },
+        {
+          id: "daily-break",
+          name: "Daily Break",
+          category: "personal",
+          cadence: "daily",
+          dayOfWeek: null,
+          startTime: null,
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "Flex placement per v5. Step away from desk - walk or decompress. Not a meal. Move it around as needed."
+        },
+        {
+          id: "ella-dropoff",
+          name: "Ella Drop-off",
+          category: "personal",
+          cadence: "daily",
+          dayOfWeek: null,
+          startTime: "08:30",
+          duration: 30,
+          hoursEstimate: 0.5,
+          active: true,
+          notes: "M-F per v5. Full out-of-pocket block is 8:00-9:00a ET (60 min total, includes coffee after). Only 8:30-9:00a falls inside the 8:30a-6p work window."
+        }
+      ];
+
+      var ANNUAL_WORKSTREAMS = [];
+
+      // ── Persistence ────────────────────────────────────────────────────────
+
+      function loadState() {
+        try {
+          var raw = localStorage.getItem('workcal_v1');
+          if (raw) {
+            var saved = JSON.parse(raw);
+            if (saved.settings)          Object.assign(SETTINGS, saved.settings);
+            if (saved.recurringBlocks)   RECURRING_BLOCKS = saved.recurringBlocks;
+            if (saved.annualWorkstreams) ANNUAL_WORKSTREAMS = saved.annualWorkstreams;
+          }
+        } catch (e) {
+          console.warn('WORK CAL: could not load saved state', e);
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem('workcal_v1', JSON.stringify({
+            settings:          SETTINGS,
+            recurringBlocks:   RECURRING_BLOCKS,
+            annualWorkstreams: ANNUAL_WORKSTREAMS
+          }));
+        } catch (e) {
+          console.warn('WORK CAL: could not save state', e);
+        }
+      }
+
+      // ── Boot ───────────────────────────────────────────────────────────────
+
+      loadState();
+      console.log('WORK CAL data loaded');
+
+      // ── Public API ─────────────────────────────────────────────────────────
+
+      window.WORKCAL = {
+        settings:          SETTINGS,
+        recurringBlocks:   RECURRING_BLOCKS,
+        annualWorkstreams: ANNUAL_WORKSTREAMS,
+        save:              saveState
+      };
+
+      // ── Helpers ────────────────────────────────────────────────────────────
+
+      var CAT_ORDER = ['finance', 'people', 'programs', 'it', 'board', 'personal', 'admin'];
+      var DAY_NAMES  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function formatBlockTime(startTime, duration) {
+        var timeStr = '';
+        if (startTime) {
+          var parts  = startTime.split(':');
+          var h      = parseInt(parts[0], 10);
+          var m      = parts[1];
+          var suffix = h >= 12 ? 'p' : 'a';
+          var h12    = h % 12 || 12;
+          timeStr = h12 + ':' + m + suffix;
+        }
+        if (duration) {
+          timeStr += (timeStr ? ' ' : '') + '(' + duration + 'm)';
+        }
+        return timeStr;
+      }
+
+      function cadenceLabel(c) {
+        var map = {
+          daily:            'Daily',
+          weekly:           'Weekly',
+          biweekly:         'Biweekly',
+          monthly:          'Monthly',
+          quarterly:        'Quarterly',
+          annual_windowed:  'Annual'
+        };
+        return map[c] || c;
+      }
+
+      // ── Hours math ────────────────────────────────────────────────────────
+
+      var CADENCE_WEEKLY_FACTOR = {
+        daily:           5,
+        weekly:          1,
+        biweekly:        0.5,
+        monthly:         12 / 52,
+        quarterly:       4 / 52,
+        annual_windowed: 0
+      };
+
+      function computeWeeklyHours() {
+        var blockSubtotal = RECURRING_BLOCKS
+          .filter(function (b) { return b.active; })
+          .reduce(function (sum, b) {
+            var factor = CADENCE_WEEKLY_FACTOR[b.cadence] || 0;
+            return sum + (b.hoursEstimate || 0) * factor;
+          }, 0);
+        return blockSubtotal
+          + SETTINGS_HOURS_CONTRIB.emailHoursPerWeek
+          + SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek
+          + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek;
+      }
+
+      function computeBlockSubtotal() {
+        return RECURRING_BLOCKS
+          .filter(function (b) { return b.active; })
+          .reduce(function (sum, b) {
+            var factor = CADENCE_WEEKLY_FACTOR[b.cadence] || 0;
+            return sum + (b.hoursEstimate || 0) * factor;
+          }, 0);
+      }
+
+      // ── Home view renderer ────────────────────────────────────────────────
+
+      function renderHomeView() {
+        var container = document.getElementById('view-home');
+        if (!container) return;
+
+        var blockSub = computeBlockSubtotal();
+        var total    = computeWeeklyHours();
+        var target   = SETTINGS.weeklyTargetHours || 40;
+
+        var bandClass, bandLabel;
+        if (total < 30) {
+          bandClass = 'band-under';  bandLabel = 'UNDER PLAN';
+        } else if (total < 40) {
+          bandClass = 'band-at';     bandLabel = 'AT PLAN';
+        } else if (total < 50) {
+          bandClass = 'band-over';   bandLabel = 'OVER PLAN';
+        } else {
+          bandClass = 'band-unsust'; bandLabel = 'UNSUSTAINABLE';
+        }
+
+        var tiles = [
+          { label: 'View Week',          view: 'week'        },
+          { label: 'View List',          view: 'list'        },
+          { label: 'Manage Workstreams', view: 'workstreams' }
+        ].map(function (t) {
+          return '<button class="nav-tile" data-view="' + t.view + '">'
+               + escHtml(t.label)
+               + '</button>';
+        }).join('');
+
+        var breakdown =
+          'Recurring blocks: ' + blockSub.toFixed(1)
+          + ' &middot; Email: ' + SETTINGS_HOURS_CONTRIB.emailHoursPerWeek.toFixed(1)
+          + ' &middot; Ad-hoc: ' + SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek.toFixed(1)
+          + ' &middot; Family pickups: ' + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek.toFixed(1);
+
+        container.innerHTML =
+          '<div class="home-card ' + bandClass + '">'
+          + '<p class="big-number">'    + total.toFixed(1)   + '</p>'
+          + '<p class="target-label">of ' + target + ' target</p>'
+          + '<p class="band-label">'    + bandLabel          + '</p>'
+          + '<p class="breakdown-line">' + breakdown         + '</p>'
+          + '</div>'
+          + '<div class="nav-tiles">' + tiles + '</div>';
+
+        // Wire tile clicks through the existing showView
+        container.querySelectorAll('.nav-tile[data-view]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            showView(btn.dataset.view);
+          });
+        });
+      }
+
+      // ── List view renderer ─────────────────────────────────────────────────
+
+      function renderListView() {
+        var container = document.getElementById('view-list');
+        if (!container) return;
+
+        var sorted = RECURRING_BLOCKS.slice().sort(function (a, b) {
+          var ai = CAT_ORDER.indexOf(a.category);
+          var bi = CAT_ORDER.indexOf(b.category);
+          if (ai !== bi) return ai - bi;
+          return a.name.localeCompare(b.name);
+        });
+
+        var total       = sorted.length;
+        var activeCount = sorted.filter(function (b) { return b.active; }).length;
+
+        var rows = sorted.map(function (b) {
+          var day  = (b.dayOfWeek !== null && b.dayOfWeek !== undefined) ? DAY_NAMES[b.dayOfWeek] : '';
+          var time = formatBlockTime(b.startTime, b.duration);
+          var hrs  = (b.hoursEstimate !== null && b.hoursEstimate !== undefined)
+                     ? b.hoursEstimate.toFixed(1) : '';
+          return '<tr>'
+            + '<td>' + escHtml(b.name) + '</td>'
+            + '<td><span class="cat-pill cat-' + b.category + '">' + b.category + '</span></td>'
+            + '<td>' + cadenceLabel(b.cadence) + '</td>'
+            + '<td>' + day + '</td>'
+            + '<td style="white-space:nowrap;">' + time + '</td>'
+            + '<td>' + hrs + '</td>'
+            + '<td><span class="status-dot ' + (b.active ? 'on' : 'off') + '"></span></td>'
+            + '</tr>';
+        }).join('');
+
+        container.innerHTML =
+          '<h2>List</h2>'
+          + '<p class="list-summary">' + total + ' recurring blocks (' + activeCount + ' active)</p>'
+          + '<div style="overflow-x:auto;">'
+          +   '<table class="list-table">'
+          +     '<thead><tr>'
+          +       '<th>Name</th>'
+          +       '<th>Category</th>'
+          +       '<th>Cadence</th>'
+          +       '<th>Day</th>'
+          +       '<th>Time</th>'
+          +       '<th>Hours</th>'
+          +       '<th>Status</th>'
+          +     '</tr></thead>'
+          +     '<tbody>' + rows + '</tbody>'
+          +   '</table>'
+          + '</div>';
+      }
+
+      // ── Workstreams editor ────────────────────────────────────────────────
+
+      var editingBlockId = null;
+      var editingIsNew   = false;
+
+      function findBlock(id) {
+        for (var i = 0; i < RECURRING_BLOCKS.length; i++) {
+          if (RECURRING_BLOCKS[i].id === id) return RECURRING_BLOCKS[i];
+        }
+        return null;
+      }
+
+      function buildEditFormHTML(b) {
+        var dayOptions = '<option value="">-</option>';
+        DAY_NAMES.forEach(function (d, i) {
+          dayOptions += '<option value="' + i + '"'
+            + (b.dayOfWeek === i ? ' selected' : '') + '>' + d + '</option>';
+        });
+
+        var categories = ['finance','people','programs','it','board','personal','admin'];
+        var catOptions = categories.map(function (c) {
+          return '<option value="' + c + '"'
+            + (b.category === c ? ' selected' : '') + '>'
+            + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+        }).join('');
+
+        var cadences = ['daily','weekly','biweekly','monthly','quarterly','annual_windowed'];
+        var cadOptions = cadences.map(function (c) {
+          return '<option value="' + c + '"'
+            + (b.cadence === c ? ' selected' : '') + '>'
+            + cadenceLabel(c) + '</option>';
+        }).join('');
+
+        return '<div class="ws-form">'
+          + '<div class="ws-form-row"><label>Name</label>'
+          + '<input type="text" id="ws-f-name" value="' + escHtml(b.name) + '"></div>'
+          + '<div class="ws-form-row"><label>Category</label>'
+          + '<select id="ws-f-category">' + catOptions + '</select></div>'
+          + '<div class="ws-form-row"><label>Cadence</label>'
+          + '<select id="ws-f-cadence">' + cadOptions + '</select></div>'
+          + '<div class="ws-form-row"><label>Day of Week</label>'
+          + '<select id="ws-f-day">' + dayOptions + '</select></div>'
+          + '<div class="ws-form-row"><label>Start Time</label>'
+          + '<input type="time" id="ws-f-time" value="' + escHtml(b.startTime || '') + '"></div>'
+          + '<div class="ws-form-row"><label>Duration (min)</label>'
+          + '<input type="number" id="ws-f-duration" min="5" step="5" value="'
+          + (b.duration || '') + '"></div>'
+          + '<div class="ws-form-row"><label>Hours Est.</label>'
+          + '<input type="number" id="ws-f-hours" min="0" step="0.5" value="'
+          + (b.hoursEstimate !== null && b.hoursEstimate !== undefined ? b.hoursEstimate : '')
+          + '"></div>'
+          + '<div class="ws-form-row"><label>Notes</label>'
+          + '<textarea id="ws-f-notes" rows="3">' + escHtml(b.notes || '') + '</textarea></div>'
+          + '<div class="ws-form-actions">'
+          + '<button class="btn-save"   id="ws-btn-save">Save</button>'
+          + '<button class="btn-cancel" id="ws-btn-cancel">Cancel</button>'
+          + '<button class="btn-delete" id="ws-btn-delete">Delete</button>'
+          + '</div></div>';
+      }
+
+      function buildBlockCardHTML(b) {
+        var isEditing  = (editingBlockId === b.id);
+        var day        = (b.dayOfWeek !== null && b.dayOfWeek !== undefined) ? DAY_NAMES[b.dayOfWeek] : '';
+        var time       = formatBlockTime(b.startTime, b.duration);
+        var metaParts  = [b.category, cadenceLabel(b.cadence)];
+        if (day)  metaParts.push(day);
+        if (time) metaParts.push(time);
+
+        var html = '<div class="ws-card' + (b.active ? '' : ' ws-card-inactive') + '">'
+          + '<div class="ws-card-top">'
+          + '<div class="ws-card-left">'
+          + '<div class="ws-card-name">' + escHtml(b.name) + '</div>'
+          + '<div class="ws-card-meta">' + escHtml(metaParts.join(' · ')) + '</div>'
+          + '</div>'
+          + '<div class="ws-card-right">'
+          + '<input type="checkbox" class="ws-toggle" data-id="' + escHtml(b.id) + '"'
+          + (b.active ? ' checked' : '') + '>'
+          + '<button class="ws-edit-btn" data-id="' + escHtml(b.id) + '">'
+          + (isEditing ? 'Close' : 'Edit') + '</button>'
+          + '</div>'
+          + '</div>';
+
+        if (isEditing) html += buildEditFormHTML(b);
+        html += '</div>';
+        return html;
+      }
+
+      function removeBlockById(id) {
+        for (var i = 0; i < RECURRING_BLOCKS.length; i++) {
+          if (RECURRING_BLOCKS[i].id === id) { RECURRING_BLOCKS.splice(i, 1); return; }
+        }
+      }
+
+      function renderWorkstreamsView() {
+        var container = document.getElementById('view-workstreams');
+        if (!container) return;
+
+        container.innerHTML =
+          '<h2>Workstreams</h2>'
+          + '<div class="ws-header">'
+          + '<span class="ws-section-title">Recurring Blocks</span>'
+          + '<button class="ws-add-btn" id="ws-add-btn">+ Add Block</button>'
+          + '</div>'
+          + '<div class="ws-cards">'
+          + RECURRING_BLOCKS.map(buildBlockCardHTML).join('')
+          + '</div>';
+
+        // Add block
+        document.getElementById('ws-add-btn').addEventListener('click', function () {
+          var nb = {
+            id:            'block-' + Date.now(),
+            name:          'New Block',
+            category:      'finance',
+            cadence:       'weekly',
+            dayOfWeek:     null,
+            startTime:     null,
+            duration:      30,
+            hoursEstimate: 0.5,
+            active:        true,
+            notes:         ''
+          };
+          RECURRING_BLOCKS.push(nb);
+          editingBlockId = nb.id;
+          editingIsNew   = true;
+          renderWorkstreamsView();
+        });
+
+        // Active toggles
+        container.querySelectorAll('.ws-toggle').forEach(function (toggle) {
+          toggle.addEventListener('change', function () {
+            var block = findBlock(toggle.dataset.id);
+            if (!block) return;
+            block.active = toggle.checked;
+            saveState();
+            renderHomeView();
+            renderListView();
+            renderWorkstreamsView();
+          });
+        });
+
+        // Edit / Close buttons
+        container.querySelectorAll('.ws-edit-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var id = btn.dataset.id;
+            if (editingBlockId === id) {
+              if (editingIsNew) removeBlockById(editingBlockId);
+              editingBlockId = null;
+              editingIsNew   = false;
+            } else {
+              editingBlockId = id;
+              editingIsNew   = false;
+            }
+            renderWorkstreamsView();
+          });
+        });
+
+        // Form buttons (only present when form is open)
+        var saveBtn   = document.getElementById('ws-btn-save');
+        var cancelBtn = document.getElementById('ws-btn-cancel');
+        var deleteBtn = document.getElementById('ws-btn-delete');
+
+        if (saveBtn) {
+          saveBtn.addEventListener('click', function () {
+            var block = findBlock(editingBlockId);
+            if (!block) return;
+            block.name          = document.getElementById('ws-f-name').value.trim() || 'Untitled';
+            block.category      = document.getElementById('ws-f-category').value;
+            block.cadence       = document.getElementById('ws-f-cadence').value;
+            var dayVal          = document.getElementById('ws-f-day').value;
+            block.dayOfWeek     = dayVal === '' ? null : parseInt(dayVal, 10);
+            var timeVal         = document.getElementById('ws-f-time').value;
+            block.startTime     = timeVal || null;
+            var durVal          = document.getElementById('ws-f-duration').value;
+            block.duration      = durVal ? parseInt(durVal, 10) : null;
+            var hrsVal          = document.getElementById('ws-f-hours').value;
+            block.hoursEstimate = hrsVal !== '' ? parseFloat(hrsVal) : 0;
+            block.notes         = document.getElementById('ws-f-notes').value;
+            saveState();
+            editingBlockId = null;
+            editingIsNew   = false;
+            renderWorkstreamsView();
+            renderHomeView();
+            renderListView();
+          });
+        }
+
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', function () {
+            if (editingIsNew) removeBlockById(editingBlockId);
+            editingBlockId = null;
+            editingIsNew   = false;
+            renderWorkstreamsView();
+          });
+        }
+
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', function () {
+            if (!confirm('Delete this block?')) return;
+            removeBlockById(editingBlockId);
+            saveState();
+            editingBlockId = null;
+            editingIsNew   = false;
+            renderWorkstreamsView();
+            renderHomeView();
+            renderListView();
+          });
+        }
+      }
+
+      // ── Navigation ─────────────────────────────────────────────────────────
+
+      const tabs  = document.querySelectorAll('.nav-tab');
+      const views = document.querySelectorAll('.view');
+
+      function showView(viewId) {
+        views.forEach(function (v) {
+          v.classList.toggle('active', v.id === 'view-' + viewId);
+        });
+        tabs.forEach(function (t) {
+          t.classList.toggle('active', t.dataset.view === viewId);
+        });
+        if (viewId === 'home')        renderHomeView();
+        if (viewId === 'list')        renderListView();
+        if (viewId === 'workstreams') renderWorkstreamsView();
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          showView(tab.dataset.view);
+        });
+      });
+
+      // Default view on load
+      showView('home');
+    })();
+  </script>
+
+</body>
+</html>
