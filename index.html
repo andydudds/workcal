@@ -401,6 +401,29 @@
       color: var(--gray-600);
     }
 
+    .week-biweekly-badge {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--gray-600);
+      background: var(--gray-200);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .week-block-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
     /* ── List view ─────────────────────────────────────────────────────────── */
     .list-top-bar {
       display: flex;
@@ -1491,6 +1514,91 @@
         var total = computeWeeklyHours();
         var band  = hoursBand(total);
 
+        // Cadences that belong in the periodic strip, not the grid columns
+        var PERIODIC_CADENCES = ['monthly', 'quarterly', 'annual_windowed'];
+        var GRID_CADENCES     = ['daily', 'weekly', 'biweekly'];
+
+        // Day columns: Mon(1)..Fri(5)
+        var WEEK_DAYS = [
+          { label: 'Mon', num: 1 },
+          { label: 'Tue', num: 2 },
+          { label: 'Wed', num: 3 },
+          { label: 'Thu', num: 4 },
+          { label: 'Fri', num: 5 }
+        ];
+
+        var activeBlocks = RECURRING_BLOCKS.filter(function (b) { return b.active; });
+
+        // Periodic strip blocks (monthly / quarterly / annual_windowed)
+        var periodicBlocks = activeBlocks.filter(function (b) {
+          return PERIODIC_CADENCES.indexOf(b.cadence) !== -1;
+        });
+
+        // Build each column HTML
+        var colsHtml = WEEK_DAYS.map(function (day) {
+          // Collect blocks that appear on this weekday
+          var dayBlocks = activeBlocks.filter(function (b) {
+            if (GRID_CADENCES.indexOf(b.cadence) === -1) return false;
+            if (b.cadence === 'daily') return true;          // every weekday
+            // weekly / biweekly: must match day number
+            return b.dayOfWeek === day.num;
+          });
+
+          // Sort by start time (nulls last), then by name
+          dayBlocks.sort(function (a, b) {
+            var aStart = a.startTime ? timeStrToMins(a.startTime) : Infinity;
+            var bStart = b.startTime ? timeStrToMins(b.startTime) : Infinity;
+            if (aStart !== bStart) return aStart - bStart;
+            return a.name.localeCompare(b.name);
+          });
+
+          // Column subtotal
+          var dayTotal = dayBlocks.reduce(function (sum, b) {
+            return sum + (b.hoursEstimate || 0);
+          }, 0);
+
+          var headHtml = '<div class="week-col-head">'
+            + '<div class="week-day-name">' + day.label + '</div>'
+            + '<div class="week-day-hrs">' + dayTotal.toFixed(1) + 'h</div>'
+            + '</div>';
+
+          var bodyHtml;
+          if (dayBlocks.length === 0) {
+            bodyHtml = '<div class="week-col-body"><div class="week-empty">&middot;</div></div>';
+          } else {
+            var cards = dayBlocks.map(function (b) {
+              var timeStr = formatBlockTime(b.startTime, b.duration);
+              var hrs     = (b.hoursEstimate !== null && b.hoursEstimate !== undefined)
+                            ? b.hoursEstimate.toFixed(1) + 'h' : '';
+              var biBadge = (b.cadence === 'biweekly')
+                            ? '<span class="week-biweekly-badge">biweekly</span>' : '';
+              return '<div class="week-block">'
+                + '<div class="week-block-name">' + escHtml(b.name) + biBadge + '</div>'
+                + '<div class="week-block-meta">'
+                +   '<span class="cat-pill cat-' + b.category + '">' + b.category + '</span>'
+                +   '<span class="week-block-time">' + escHtml(timeStr) + '</span>'
+                +   (hrs ? '<span class="week-block-time">' + hrs + '</span>' : '')
+                + '</div>'
+                + '</div>';
+            }).join('');
+            bodyHtml = '<div class="week-col-body">' + cards + '</div>';
+          }
+
+          return '<div class="week-col">' + headHtml + bodyHtml + '</div>';
+        }).join('');
+
+        // Periodic strip
+        var periodicHtml = '';
+        if (periodicBlocks.length > 0) {
+          var periodicItems = periodicBlocks
+            .sort(function (a, b) { return a.name.localeCompare(b.name); })
+            .map(function (b) { return escHtml(b.name) + ' (' + cadenceLabel(b.cadence) + ')'; })
+            .join(', ');
+          periodicHtml = '<div class="week-periodic">'
+            + '<strong>Periodic (not in weekly grid):</strong> ' + periodicItems
+            + '</div>';
+        }
+
         container.innerHTML = ''
           + '<h2>Week</h2>'
           + '<div class="week-total ' + band.cls + '">'
@@ -1500,8 +1608,9 @@
           +   '<div class="week-caption">Full weekly plan. Columns below show scheduled blocks only.</div>'
           + '</div>'
           + '<div class="week-grid-wrap">'
-          +   '<div class="week-grid" id="week-grid"></div>'
-          + '</div>';
+          +   '<div class="week-grid">' + colsHtml + '</div>'
+          + '</div>'
+          + periodicHtml;
       }
 
       // ── List view renderer ─────────────────────────────────────────────────
