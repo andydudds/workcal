@@ -167,11 +167,11 @@
       opacity: 0.75;
     }
 
-    /* band color variants - shared by .home-card and .week-total */
-    .home-card.band-under,  .week-total.band-under  { background: var(--mint);      }
-    .home-card.band-at,     .week-total.band-at     { background: var(--champagne); }
-    .home-card.band-over,   .week-total.band-over   { background: var(--celestial); }
-    .home-card.band-unsust, .week-total.band-unsust { background: var(--cardinal);  }
+    /* band color variants - shared by .home-card, .week-total, .hours-chip */
+    .home-card.band-under,  .week-total.band-under,  .hours-chip.band-under  { background: var(--mint);      }
+    .home-card.band-at,     .week-total.band-at,     .hours-chip.band-at     { background: var(--champagne); }
+    .home-card.band-over,   .week-total.band-over,   .hours-chip.band-over   { background: var(--celestial); }
+    .home-card.band-unsust, .week-total.band-unsust, .hours-chip.band-unsust { background: var(--cardinal);  }
 
     .home-card.band-under  .big-number,
     .home-card.band-under  .target-label,
@@ -179,7 +179,8 @@
     .week-total.band-under .big-number,
     .week-total.band-under .target-label,
     .week-total.band-under .band-label,
-    .week-total.band-under .week-caption { color: var(--space-cadet); }
+    .week-total.band-under .week-caption,
+    .hours-chip.band-under .band-label   { color: var(--space-cadet); }
 
     .home-card.band-at     .big-number,
     .home-card.band-at     .target-label,
@@ -187,7 +188,8 @@
     .week-total.band-at    .big-number,
     .week-total.band-at    .target-label,
     .week-total.band-at    .band-label,
-    .week-total.band-at    .week-caption { color: var(--space-cadet); }
+    .week-total.band-at    .week-caption,
+    .hours-chip.band-at    .band-label   { color: var(--space-cadet); }
 
     .home-card.band-over   .big-number,
     .home-card.band-over   .target-label,
@@ -195,7 +197,8 @@
     .week-total.band-over  .big-number,
     .week-total.band-over  .target-label,
     .week-total.band-over  .band-label,
-    .week-total.band-over  .week-caption { color: var(--white); }
+    .week-total.band-over  .week-caption,
+    .hours-chip.band-over  .band-label   { color: var(--white); }
 
     .home-card.band-unsust  .big-number,
     .home-card.band-unsust  .target-label,
@@ -203,7 +206,8 @@
     .week-total.band-unsust .big-number,
     .week-total.band-unsust .target-label,
     .week-total.band-unsust .band-label,
-    .week-total.band-unsust .week-caption { color: var(--white); }
+    .week-total.band-unsust .week-caption,
+    .hours-chip.band-unsust .band-label  { color: var(--white); }
 
     /* nav tiles */
     .nav-tiles {
@@ -422,6 +426,64 @@
       flex-wrap: wrap;
       gap: 4px;
       margin-top: 3px;
+    }
+
+    /* ── Hours view ────────────────────────────────────────────────────────── */
+    .hours-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      padding: 8px 16px;
+      margin-top: 20px;
+    }
+
+    .hours-chip .band-label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hours-table {
+      width: 100%;
+      max-width: 480px;
+      border-collapse: collapse;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    .hours-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--gray-200);
+      color: var(--space-cadet);
+    }
+
+    .hours-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .hours-table .hours-divider td {
+      border-top: 2px solid var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
+      padding-top: 11px;
+    }
+
+    .hours-table .hours-row-total td {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .hours-table .hours-row-headroom td {
+      color: var(--lapis);
+    }
+
+    .hours-table .hours-row-over td {
+      color: var(--cardinal);
     }
 
     /* ── Day view ──────────────────────────────────────────────────────────── */
@@ -1129,6 +1191,7 @@
             if (saved.settings)          Object.assign(SETTINGS, saved.settings);
             if (saved.recurringBlocks)   RECURRING_BLOCKS = saved.recurringBlocks;
             if (saved.annualWorkstreams) ANNUAL_WORKSTREAMS = saved.annualWorkstreams;
+            if (saved.hoursContrib)      Object.assign(SETTINGS_HOURS_CONTRIB, saved.hoursContrib);
           }
         } catch (e) {
           console.warn('WORK CAL: could not load saved state', e);
@@ -1140,7 +1203,8 @@
           localStorage.setItem('workcal_v1', JSON.stringify({
             settings:          SETTINGS,
             recurringBlocks:   RECURRING_BLOCKS,
-            annualWorkstreams: ANNUAL_WORKSTREAMS
+            annualWorkstreams: ANNUAL_WORKSTREAMS,
+            hoursContrib:      SETTINGS_HOURS_CONTRIB
           }));
         } catch (e) {
           console.warn('WORK CAL: could not save state', e);
@@ -1659,6 +1723,61 @@
         container.innerHTML = html;
       }
 
+      // ── Hours view renderer ───────────────────────────────────────────────
+
+      function renderHoursView() {
+        var container = document.getElementById('view-hours');
+        if (!container) return;
+
+        var blockSub = computeBlockSubtotal();
+        var total    = computeWeeklyHours();
+        var target   = SETTINGS.weeklyTargetHours;
+        var band     = hoursBand(total);
+        var diff     = target - total;
+
+        // Headroom row: positive = under target, negative = over
+        var headroomVal  = Math.abs(diff).toFixed(1) + 'h';
+        var headroomText = diff >= 0
+          ? headroomVal + ' under target'
+          : headroomVal + ' over target';
+        var headroomRowClass = diff >= 0 ? 'hours-row-headroom' : 'hours-row-over';
+
+        var html = '<h2>Hours</h2>'
+          + '<table class="hours-table">'
+          + '<tbody>'
+
+          // Bucket rows
+          + '<tr><td>Recurring blocks</td>'
+          +     '<td>' + blockSub.toFixed(1) + 'h</td></tr>'
+          + '<tr><td>Email</td>'
+          +     '<td>' + SETTINGS_HOURS_CONTRIB.emailHoursPerWeek.toFixed(1) + 'h</td></tr>'
+          + '<tr><td>Ad-hoc</td>'
+          +     '<td>' + SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek.toFixed(1) + 'h</td></tr>'
+          + '<tr><td>Family pickups</td>'
+          +     '<td>' + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek.toFixed(1) + 'h</td></tr>'
+
+          // Divider
+          + '<tr class="hours-divider"><td colspan="2"></td></tr>'
+
+          // Summary rows
+          + '<tr class="hours-row-total"><td>Total</td>'
+          +   '<td>' + total.toFixed(1) + 'h</td></tr>'
+          + '<tr><td>Target</td>'
+          +   '<td>' + target + 'h</td></tr>'
+          + '<tr class="' + headroomRowClass + '"><td>Headroom to target</td>'
+          +   '<td>' + headroomText + '</td></tr>'
+
+          + '</tbody>'
+          + '</table>'
+
+          // Band chip
+          + '<div class="hours-chip ' + band.cls + '">'
+          +   '<span class="band-label">' + band.label + '</span>'
+          + '</div>';
+
+        container.innerHTML = html;
+      }
+
       // ── Week view renderer ─────────────────────────────────────────────────
 
       function renderWeekView() {
@@ -2146,6 +2265,7 @@
         if (viewId === 'day')         renderDayView();
         if (viewId === 'list')        renderListView();
         if (viewId === 'week')        renderWeekView();
+        if (viewId === 'hours')       renderHoursView();
         if (viewId === 'workstreams') renderWorkstreamsView();
       }
 
