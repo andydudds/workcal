@@ -709,8 +709,10 @@
       // ── Data defaults ──────────────────────────────────────────────────────
 
       var SETTINGS = {
-        workingHoursStart:            "08:30",
-        workingHoursEnd:              "18:00",
+        workingHoursStart:            "08:30",   // capacity / hours-math window (Eastern)
+        workingHoursEnd:              "18:00",   // capacity / hours-math window (Eastern)
+        availabilityStartET:          "09:30",   // earliest offered meeting start (Eastern)
+        availabilityLatestStartET:    "16:00",   // latest a meeting may START (Eastern)
         timezone:                     "America/New_York",
         weeklyTargetHours:            40,
         emailHoursPerDay:             1,
@@ -1094,31 +1096,29 @@
       }
 
       function computeAvailableSlots() {
-        var ET_TO_CT  = 60;
-        var MIN_SLOT  = 60;   // minimum gap length to consider (minutes)
-        var MAX_SLOT  = 90;   // maximum single offered slot (minutes)
-        var GAP_STEP  = 120;  // start offset for optional 2nd slot within a long gap
-        var MAX_SLOTS = 8;
+        // All time values in Eastern minutes-from-midnight until final CT conversion.
+        var ET_TO_CT      = 60;
+        var MIN_SLOT      = 60;   // minimum gap to consider (mins)
+        var MAX_SLOT      = 90;   // maximum single offered slot (mins)
+        var GAP_STEP      = 120;  // offset for optional 2nd slot within a long gap
+        var MAX_SLOTS     = 8;
 
-        // FIX 2: derive window from SETTINGS rather than hardcoding.
-        // Add ET_TO_CT to workingHoursStart so the earliest CT slot equals
-        // the setting value (08:30 CT = 09:30 ET = 570 mins).
-        var WORK_START = timeStrToMins(SETTINGS.workingHoursStart || '08:30') + ET_TO_CT;
-        var WORK_END   = timeStrToMins(SETTINGS.workingHoursEnd   || '18:00');
+        // Availability window - separate from hours-math window in SETTINGS.
+        var AVAIL_START   = timeStrToMins(SETTINGS.availabilityStartET       || '09:30'); // 570
+        var LATEST_START  = timeStrToMins(SETTINGS.availabilityLatestStartET || '16:00'); // 960
+        var AVAIL_END     = timeStrToMins(SETTINGS.workingHoursEnd           || '18:00'); // 1080
 
         var now          = new Date();
         var todayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         var nowLocalMins = now.getHours() * 60 + now.getMinutes();
 
-        // Collect next 7 weekdays starting from today
+        // Next 7 weekdays starting from today
         var weekdays = [];
         for (var offset = 0; weekdays.length < 7; offset++) {
           var d   = new Date(todayStart);
           d.setDate(todayStart.getDate() + offset);
           var dow = d.getDay();
-          if (dow !== 0 && dow !== 6) {
-            weekdays.push({ dow: dow, isToday: offset === 0 });
-          }
+          if (dow !== 0 && dow !== 6) weekdays.push({ dow: dow, isToday: offset === 0 });
         }
 
         var DAY_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1127,13 +1127,10 @@
         weekdays.forEach(function (day) {
           if (slots.length >= MAX_SLOTS) return;
 
-          // Only blocks with a pinned day + time + duration
+          // Pinned blocks only (day + time + duration all set)
           var booked = RECURRING_BLOCKS
             .filter(function (b) {
-              return b.active
-                && b.dayOfWeek === day.dow
-                && b.startTime
-                && b.duration > 0;
+              return b.active && b.dayOfWeek === day.dow && b.startTime && b.duration > 0;
             })
             .map(function (b) {
               var s = timeStrToMins(b.startTime);
@@ -1141,58 +1138,55 @@
             })
             .sort(function (a, b) { return a.start - b.start; });
 
-          // Subtract booked intervals from work window
+          // Subtract booked intervals from availability window (all in ET mins)
           var free   = [];
-          var cursor = WORK_START;
+          var cursor = AVAIL_START;
           booked.forEach(function (bk) {
-            var bkS = Math.max(bk.start, WORK_START);
-            var bkE = Math.min(bk.end,   WORK_END);
+            var bkS = Math.max(bk.start, AVAIL_START);
+            var bkE = Math.min(bk.end,   AVAIL_END);
             if (bkS > cursor) free.push({ start: cursor, end: bkS });
             if (bkE > cursor) cursor = bkE;
           });
-          if (cursor < WORK_END) free.push({ start: cursor, end: WORK_END });
+          if (cursor < AVAIL_END) free.push({ start: cursor, end: AVAIL_END });
 
-          // For today: skip slots whose CT start is already past
+          // For today: drop slots whose ET start (converted to CT for local compare) is past
           if (day.isToday) {
-            free = free.filter(function (sl) {
-              return (sl.start - ET_TO_CT) > nowLocalMins;
-            });
+            free = free.filter(function (sl) { return (sl.start - ET_TO_CT) > nowLocalMins; });
           }
 
-          // Drop gaps shorter than the minimum slot length
+          // Drop gaps shorter than minimum
           free = free.filter(function (sl) { return (sl.end - sl.start) >= MIN_SLOT; });
 
-          // FIX 1: cap each offered slot at 90 min; emit at most 2 per gap
+          // Emit slots: max 90 min each, max 2 per gap, no slot may START after LATEST_START
           free.forEach(function (sl) {
             if (slots.length >= MAX_SLOTS) return;
+            if (sl.start > LATEST_START) return;   // entire gap starts too late
+
             var gap = sl.end - sl.start;
 
-            if (gap <= MAX_SLOT) {
-              // Gap fits within 90 min - emit as-is
-              slots.push({ label:   DAY_LABEL[day.dow],
-                           startCT: sl.start - ET_TO_CT,
-                           endCT:   sl.end   - ET_TO_CT });
-            } else {
-              // First offered slot: gap start to gap start + 90 min
-              slots.push({ label:   DAY_LABEL[day.dow],
-                           startCT:  sl.start            - ET_TO_CT,
-                           endCT:   (sl.start + MAX_SLOT) - ET_TO_CT });
+            // First offered slot
+            var e1 = sl.start + Math.min(gap, MAX_SLOT);
+            slots.push({ label: DAY_LABEL[day.dow],
+                         startET: sl.start, endET: e1 });   // store ET; convert at display
 
-              // Optional second slot: 2 hrs after gap start, if it fits
-              if (slots.length < MAX_SLOTS) {
-                var s2 = sl.start + GAP_STEP;
-                var e2 = s2 + MAX_SLOT;
-                if (e2 <= sl.end) {
-                  slots.push({ label:   DAY_LABEL[day.dow],
-                               startCT: s2 - ET_TO_CT,
-                               endCT:   e2 - ET_TO_CT });
-                }
+            // Optional second slot: 2 hrs after gap start, if it fits and starts in time
+            if (slots.length < MAX_SLOTS) {
+              var s2 = sl.start + GAP_STEP;
+              var e2 = s2 + MAX_SLOT;
+              if (s2 <= LATEST_START && e2 <= sl.end) {
+                slots.push({ label: DAY_LABEL[day.dow],
+                             startET: s2, endET: e2 });
               }
             }
           });
         });
 
-        return slots;
+        // Convert ET to CT only here, at the boundary before display
+        return slots.map(function (sl) {
+          return { label:   sl.label,
+                   startCT: sl.startET - ET_TO_CT,
+                   endCT:   sl.endET   - ET_TO_CT };
+        });
       }
 
       function formatAvailabilityText(slots) {
