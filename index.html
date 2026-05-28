@@ -642,6 +642,7 @@
     .cat-personal { background: var(--champagne); color: var(--space-cadet); }
     .cat-it       { background: var(--gray-600);  color: var(--white);       }
     .cat-admin    { background: var(--gray-600);  color: var(--white);       }
+    .cat-sprint   { background: #F26B1F;          color: var(--white);       }
 
     .status-dot {
       display: inline-block;
@@ -1038,7 +1039,7 @@
         { id: "tim-snap-wed",         name: "Tim Workstream / SNAP",         category: "programs", cadence: "weekly",    dayOfWeek: 3,    startTime: "10:00", duration: 45,  hoursEstimate: 0.75, active: true,  notes: "Tim handoff portfolio (Meg 5/27): 1) SNAP Revamped Workflow, National Able alignment, PRIORITY, July FY rollover. 2) SNAP Reimbursable Costs Audit, state payroll reimbursement revenue strategy. 3) Therapy Services Reporting Audit, only KC compliant, follow up each site. 4) MOU SOP, signing authority and guardrails." },
         { id: "amanda-focus",         name: "Amanda/Social Enterprise focus",category: "people",   cadence: "weekly",    dayOfWeek: 3,    startTime: "14:00", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "Focus time supporting Amanda and Social Enterprise / Corporate Relations." },
         { id: "finance-review-solo",  name: "Finance Review (deep work)",    category: "finance",  cadence: "weekly",    dayOfWeek: 3,    startTime: "11:00", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "Weekly solo finance review as Andy absorbs CFO work post-Pat. BvA, cash position, close status, reforecast. Heads-down, not a meeting." },
-        { id: "dashboard-sprint",     name: "Dashboard Sprint",              category: "finance",  cadence: "daily",     dayOfWeek: null, startTime: "16:00", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "2-week sprint. Build Jun 1-12 2026, first send on the 6/16 Tuesday snapshot. Extend weekly Tue financial snapshot to add revenue pipeline: grant pipeline (owner Elizabeth) + sponsor pipeline (owner Amanda). Prioritized ahead of talent/recruitment given revenue-confidence gap. Wk1: define + source both, name owner + source system, one-page spec, start sponsorships. Wk2: stub into snapshot, manual OK. PARKED: talent placement, Cycle C recruitment (gated on Salesforce/10Pearls), Salesforce full, travel, tech memo, lifecycle. When sprint ends, set active: false to retain as record without cluttering the active week." },
+        { id: "dashboard-sprint",     name: "Dashboard Sprint",              category: "sprint",   cadence: "daily",     dayOfWeek: null, startTime: "16:00", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "2-week sprint. Build Jun 1-12 2026, first send on the 6/16 Tuesday snapshot. Extend weekly Tue financial snapshot to add revenue pipeline: grant pipeline (owner Elizabeth) + sponsor pipeline (owner Amanda). Prioritized ahead of talent/recruitment given revenue-confidence gap. Wk1: define + source both, name owner + source system, one-page spec, start sponsorships. Wk2: stub into snapshot, manual OK. PARKED: talent placement, Cycle C recruitment (gated on Salesforce/10Pearls), Salesforce full, travel, tech memo, lifecycle. When sprint ends, set active: false to retain as record without cluttering the active week." },
         { id: "elt-alignment",        name: "ELT Alignment",                 category: "people",   cadence: "weekly",    dayOfWeek: 4,    startTime: "09:30", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "Weekly ELT alignment." },
         { id: "ar-qb-integrity",      name: "AR + QB Integrity",             category: "finance",  cadence: "weekly",    dayOfWeek: 4,    startTime: "11:00", duration: 60,  hoursEstimate: 1.0,  active: true,  notes: "AR follow-ups, QB review, anomalies/cleanup, coordination with Souley/Juliana." },
         { id: "slt-first-team",       name: "SLT (First Team)",              category: "people",   cadence: "weekly",    dayOfWeek: 4,    startTime: "13:00", duration: 120, hoursEstimate: 2.0,  active: true,  notes: "Weekly SLT / First Team. New time Thu 1:00p." },
@@ -1106,7 +1107,7 @@
 
       // ── Helpers ────────────────────────────────────────────────────────────
 
-      var CAT_ORDER = ['finance', 'people', 'programs', 'it', 'board', 'personal', 'admin'];
+      var CAT_ORDER = ['finance', 'people', 'programs', 'it', 'board', 'personal', 'admin', 'sprint'];
       var DAY_NAMES  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
       function escHtml(str) {
