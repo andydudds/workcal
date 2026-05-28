@@ -424,6 +424,49 @@
       margin-top: 3px;
     }
 
+    /* ── Day view ──────────────────────────────────────────────────────────── */
+    .day-header {
+      font-family: 'Lato', sans-serif;
+      font-size: 15px;
+      color: var(--space-cadet);
+      margin-bottom: 16px;
+    }
+
+    .day-weekend-msg {
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      color: var(--gray-600);
+      margin-top: 8px;
+    }
+
+    .day-section-label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gray-600);
+      margin: 16px 0 6px;
+    }
+
+    .day-blocks {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 480px;
+    }
+
+    .day-subtotal {
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--space-cadet);
+      margin-top: 16px;
+    }
+
+    .day-subtotal strong {
+      font-weight: 700;
+    }
+
     /* ── List view ─────────────────────────────────────────────────────────── */
     .list-top-bar {
       display: flex;
@@ -1505,6 +1548,117 @@
         });
       }
 
+      // ── Day view renderer ──────────────────────────────────────────────────
+
+      function renderDayView() {
+        var container = document.getElementById('view-day');
+        if (!container) return;
+
+        var PERIODIC_CADENCES = ['monthly', 'quarterly', 'annual_windowed'];
+        var GRID_CADENCES     = ['daily', 'weekly', 'biweekly'];
+
+        var FULL_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var MONTH_NAMES    = ['January','February','March','April','May','June',
+                              'July','August','September','October','November','December'];
+
+        var now     = new Date();
+        var dow     = now.getDay();                 // 0=Sun .. 6=Sat
+        var dayName = FULL_DAY_NAMES[dow];
+        var dateStr = dayName + ', ' + MONTH_NAMES[now.getMonth()] + ' ' + now.getDate();
+
+        // Helper: build a block card (identical markup to Week view)
+        function blockCard(b) {
+          var timeStr = formatBlockTime(b.startTime, b.duration);
+          var hrs     = (b.hoursEstimate !== null && b.hoursEstimate !== undefined)
+                        ? b.hoursEstimate.toFixed(1) + 'h' : '';
+          var biBadge = (b.cadence === 'biweekly')
+                        ? '<span class="week-biweekly-badge">biweekly</span>' : '';
+          return '<div class="week-block">'
+            + '<div class="week-block-name">' + escHtml(b.name) + biBadge + '</div>'
+            + '<div class="week-block-meta">'
+            +   '<span class="cat-pill cat-' + b.category + '">' + b.category + '</span>'
+            +   '<span class="week-block-time">' + escHtml(timeStr) + '</span>'
+            +   (hrs ? '<span class="week-block-time">' + hrs + '</span>' : '')
+            + '</div>'
+            + '</div>';
+        }
+
+        var html = '<h2>Day</h2>'
+          + '<div class="day-header">' + dateStr + '</div>';
+
+        // Weekend short-circuit
+        if (dow === 0 || dow === 6) {
+          html += '<div class="day-weekend-msg">Weekend. No scheduled blocks.</div>';
+          container.innerHTML = html;
+          return;
+        }
+
+        var activeBlocks = RECURRING_BLOCKS.filter(function (b) { return b.active; });
+
+        // Periodic strip (monthly / quarterly / annual_windowed)
+        var periodicBlocks = activeBlocks.filter(function (b) {
+          return PERIODIC_CADENCES.indexOf(b.cadence) !== -1;
+        });
+
+        // Today's grid blocks
+        var todayBlocks = activeBlocks.filter(function (b) {
+          if (GRID_CADENCES.indexOf(b.cadence) === -1) return false;
+          if (b.cadence === 'daily') return true;
+          return b.dayOfWeek === dow;
+        });
+
+        // Split timed vs all-day
+        var timed  = todayBlocks.filter(function (b) { return b.startTime; });
+        var allDay = todayBlocks.filter(function (b) { return !b.startTime; });
+
+        // Sort timed chronologically, all-day by name
+        timed.sort(function (a, b) {
+          return timeStrToMins(a.startTime) - timeStrToMins(b.startTime);
+        });
+        allDay.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+        // Subtotal
+        var dayTotal = todayBlocks.reduce(function (sum, b) {
+          return sum + (b.hoursEstimate || 0);
+        }, 0);
+
+        // All-day section
+        if (allDay.length > 0) {
+          html += '<div class="day-section-label">All-day / no set time</div>'
+            + '<div class="day-blocks">'
+            + allDay.map(blockCard).join('')
+            + '</div>';
+        }
+
+        // Timed schedule section
+        if (timed.length > 0) {
+          html += '<div class="day-section-label">Scheduled</div>'
+            + '<div class="day-blocks">'
+            + timed.map(blockCard).join('')
+            + '</div>';
+        }
+
+        if (todayBlocks.length === 0) {
+          html += '<div class="day-weekend-msg">No recurring blocks scheduled today.</div>';
+        }
+
+        // Subtotal line
+        html += '<div class="day-subtotal">Scheduled today: <strong>' + dayTotal.toFixed(1) + 'h</strong></div>';
+
+        // Periodic strip
+        if (periodicBlocks.length > 0) {
+          var periodicItems = periodicBlocks
+            .sort(function (a, b) { return a.name.localeCompare(b.name); })
+            .map(function (b) { return escHtml(b.name) + ' (' + cadenceLabel(b.cadence) + ')'; })
+            .join(', ');
+          html += '<div class="week-periodic" style="margin-top:20px;">'
+            + '<strong>Periodic (not in daily schedule):</strong> ' + periodicItems
+            + '</div>';
+        }
+
+        container.innerHTML = html;
+      }
+
       // ── Week view renderer ─────────────────────────────────────────────────
 
       function renderWeekView() {
@@ -1989,6 +2143,7 @@
           t.classList.toggle('active', t.dataset.view === viewId);
         });
         if (viewId === 'home')        renderHomeView();
+        if (viewId === 'day')         renderDayView();
         if (viewId === 'list')        renderListView();
         if (viewId === 'week')        renderWeekView();
         if (viewId === 'workstreams') renderWorkstreamsView();
