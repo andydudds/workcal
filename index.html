@@ -264,11 +264,33 @@
     }
 
     /* ── List view ─────────────────────────────────────────────────────────── */
+    .list-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
     .list-summary {
       font-size: 13px;
       color: var(--gray-600);
-      margin: 0 0 16px;
+      margin: 0;
     }
+
+    .list-action-btn {
+      background: none;
+      border: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--gray-600);
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s;
+    }
+
+    .list-action-btn:hover { color: var(--cardinal); }
 
     .list-table {
       width: 100%;
@@ -405,6 +427,15 @@
       font-weight: 600;
       font-size: 24px;
       color: var(--space-cadet);
+    }
+
+    .ws-definition {
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      color: var(--gray-600);
+      max-width: 720px;
+      margin: 0 0 24px;
+      line-height: 1.6;
     }
 
     .ws-add-btn {
@@ -638,7 +669,7 @@
     <button class="nav-tab" data-view="list">List</button>
     <button class="nav-tab" data-view="annual">Annual</button>
     <button class="nav-tab" data-view="hours">Hours</button>
-    <button class="nav-tab" data-view="workstreams">Workstreams</button>
+    <button class="nav-tab" data-view="workstreams">Blocks</button>
   </nav>
 
   <main>
@@ -1242,7 +1273,7 @@
         var tiles = [
           { label: 'View Week',          view: 'week'        },
           { label: 'View List',          view: 'list'        },
-          { label: 'Manage Workstreams', view: 'workstreams' }
+          { label: 'Manage Blocks',      view: 'workstreams' }
         ].map(function (t) {
           return '<button class="nav-tile" data-view="' + t.view + '">'
                + escHtml(t.label)
@@ -1322,12 +1353,19 @@
             + '<td style="white-space:nowrap;">' + time + '</td>'
             + '<td>' + hrs + '</td>'
             + '<td><span class="status-dot ' + (b.active ? 'on' : 'off') + '"></span></td>'
+            + '<td style="white-space:nowrap;">'
+            + '<button class="list-action-btn" data-action="edit"   data-id="' + escHtml(b.id) + '">Edit</button>'
+            + '<button class="list-action-btn" data-action="delete" data-id="' + escHtml(b.id) + '" style="margin-left:12px;">Delete</button>'
+            + '</td>'
             + '</tr>';
         }).join('');
 
         container.innerHTML =
           '<h2>List</h2>'
+          + '<div class="list-top-bar">'
           + '<p class="list-summary">' + total + ' recurring blocks (' + activeCount + ' active)</p>'
+          + '<button class="ws-add-btn" id="list-add-btn">+ Add Block</button>'
+          + '</div>'
           + '<div style="overflow-x:auto;">'
           +   '<table class="list-table">'
           +     '<thead><tr>'
@@ -1338,10 +1376,57 @@
           +       '<th>Time</th>'
           +       '<th>Hours</th>'
           +       '<th>Status</th>'
+          +       '<th>Actions</th>'
           +     '</tr></thead>'
           +     '<tbody>' + rows + '</tbody>'
           +   '</table>'
           + '</div>';
+
+        // Add block from List view - switches to Blocks and opens new block in edit mode
+        document.getElementById('list-add-btn').addEventListener('click', function () {
+          var nb = {
+            id:            'block-' + Date.now(),
+            name:          'New Block',
+            category:      'finance',
+            cadence:       'weekly',
+            dayOfWeek:     null,
+            startTime:     null,
+            duration:      30,
+            hoursEstimate: 0.5,
+            active:        true,
+            notes:         ''
+          };
+          RECURRING_BLOCKS.push(nb);
+          editingBlockId = nb.id;
+          editingIsNew   = true;
+          showView('workstreams');
+          scrollToEditingCard();
+        });
+
+        // Edit and Delete row actions
+        container.querySelectorAll('.list-action-btn').forEach(function (btn) {
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var id     = btn.dataset.id;
+            var action = btn.dataset.action;
+
+            if (action === 'edit') {
+              editingBlockId = id;
+              editingIsNew   = false;
+              showView('workstreams');
+              scrollToEditingCard();
+
+            } else if (action === 'delete') {
+              var block = findBlock(id);
+              var label = block ? block.name : 'this block';
+              if (!confirm('Delete ' + label + '?')) return;
+              removeBlockById(id);
+              saveState();
+              renderListView();
+              renderHomeView();
+            }
+          });
+        });
       }
 
       // ── Workstreams editor ────────────────────────────────────────────────
@@ -1437,6 +1522,14 @@
         }
       }
 
+      function scrollToEditingCard() {
+        if (!editingBlockId) return;
+        var btn = document.querySelector('#view-workstreams .ws-edit-btn[data-id="' + editingBlockId + '"]');
+        if (!btn) return;
+        var card = btn.closest ? btn.closest('.ws-card') : null;
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
       function renderWorkstreamsView() {
         var container = document.getElementById('view-workstreams');
         if (!container) return;
@@ -1446,7 +1539,8 @@
         }).length;
 
         container.innerHTML =
-          '<h2>Workstreams</h2>'
+          '<h2>Blocks</h2>'
+          + '<p class="ws-definition">Blocks are recurring time commitments that repeat on a regular cadence (daily, weekly, biweekly, monthly, quarterly). These are the standing meetings, close tasks, and routines that make up your week. Annual and cyclical efforts (audit, 990, insurance renewals, board prep) are tracked separately as workstreams in the Annual view.</p>'
           + '<div class="ws-header">'
           + '<span class="ws-section-title">Recurring Blocks</span>'
           + '<button class="ws-add-btn" id="ws-add-btn">+ Add Block</button>'
