@@ -9,6 +9,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
 
+  <link rel="icon" id="favicon" />
+  <script>
+    (function () {
+      var isLocal = window.location.protocol === 'file:';
+      var bg  = isLocal ? '#0A2E36' : '#D21242';
+      var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+              + "<rect width='32' height='32' rx='6' fill='" + bg + "'/>"
+              + "<text x='16' y='20' font-family='Verdana,Geneva,sans-serif' font-weight='700' font-size='30' fill='#FFFFFF' text-anchor='middle' dominant-baseline='central'>*</text>"
+              + "</svg>";
+      document.getElementById('favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    })();
+  </script>
+
   <style>
     :root {
       --cardinal:    #D21242;
@@ -484,6 +497,24 @@
 
     .hours-table .hours-row-over td {
       color: var(--cardinal);
+    }
+
+    .hours-input {
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--space-cadet);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 3px 6px;
+      width: 56px;
+      text-align: right;
+    }
+
+    .hours-input:focus {
+      outline: none;
+      border-color: var(--lapis);
     }
 
     /* ── Day view ──────────────────────────────────────────────────────────── */
@@ -1735,26 +1766,34 @@
         var band     = hoursBand(total);
         var diff     = target - total;
 
-        // Headroom row: positive = under target, negative = over
         var headroomVal  = Math.abs(diff).toFixed(1) + 'h';
         var headroomText = diff >= 0
           ? headroomVal + ' under target'
           : headroomVal + ' over target';
         var headroomRowClass = diff >= 0 ? 'hours-row-headroom' : 'hours-row-over';
 
+        // Helper: render an editable value cell
+        function editCell(id, val) {
+          return '<td style="text-align:right;">'
+            + '<input class="hours-input" type="number" id="' + id + '"'
+            + ' step="0.5" min="0" value="' + val.toFixed(1) + '">'
+            + '<span style="font-weight:700;margin-left:3px;">h</span>'
+            + '</td>';
+        }
+
         var html = '<h2>Hours</h2>'
           + '<table class="hours-table">'
           + '<tbody>'
 
-          // Bucket rows
+          // Bucket rows - blocks read-only, rest editable
           + '<tr><td>Recurring blocks</td>'
           +     '<td>' + blockSub.toFixed(1) + 'h</td></tr>'
           + '<tr><td>Email</td>'
-          +     '<td>' + SETTINGS_HOURS_CONTRIB.emailHoursPerWeek.toFixed(1) + 'h</td></tr>'
+          +     editCell('hc-email',   SETTINGS_HOURS_CONTRIB.emailHoursPerWeek) + '</tr>'
           + '<tr><td>Ad-hoc</td>'
-          +     '<td>' + SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek.toFixed(1) + 'h</td></tr>'
+          +     editCell('hc-adhoc',   SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek) + '</tr>'
           + '<tr><td>Family pickups</td>'
-          +     '<td>' + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek.toFixed(1) + 'h</td></tr>'
+          +     editCell('hc-family',  SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek) + '</tr>'
 
           // Divider
           + '<tr class="hours-divider"><td colspan="2"></td></tr>'
@@ -1770,12 +1809,31 @@
           + '</tbody>'
           + '</table>'
 
-          // Band chip
           + '<div class="hours-chip ' + band.cls + '">'
           +   '<span class="band-label">' + band.label + '</span>'
           + '</div>';
 
         container.innerHTML = html;
+
+        // Wire change handlers
+        var edits = [
+          { id: 'hc-email',  key: 'emailHoursPerWeek'        },
+          { id: 'hc-adhoc',  key: 'adHocHoursPerWeek'        },
+          { id: 'hc-family', key: 'familyPickupHoursPerWeek' }
+        ];
+
+        edits.forEach(function (def) {
+          var el = document.getElementById(def.id);
+          if (!el) return;
+          el.addEventListener('change', function () {
+            var parsed = parseFloat(el.value);
+            if (!isNaN(parsed) && parsed >= 0) {
+              SETTINGS_HOURS_CONTRIB[def.key] = parsed;
+              saveState();
+            }
+            renderHoursView();
+          });
+        });
       }
 
       // ── Week view renderer ─────────────────────────────────────────────────
