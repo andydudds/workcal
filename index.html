@@ -1094,11 +1094,17 @@
       }
 
       function computeAvailableSlots() {
-        var WORK_START = 510;   // 08:30 ET in mins from midnight
-        var WORK_END   = 1080;  // 18:00 ET in mins from midnight
-        var ET_TO_CT   = 60;    // subtract to convert ET display to CT display
-        var MIN_SLOT   = 60;    // minimum slot length in minutes
-        var MAX_SLOTS  = 8;
+        var ET_TO_CT  = 60;
+        var MIN_SLOT  = 60;   // minimum gap length to consider (minutes)
+        var MAX_SLOT  = 90;   // maximum single offered slot (minutes)
+        var GAP_STEP  = 120;  // start offset for optional 2nd slot within a long gap
+        var MAX_SLOTS = 8;
+
+        // FIX 2: derive window from SETTINGS rather than hardcoding.
+        // Add ET_TO_CT to workingHoursStart so the earliest CT slot equals
+        // the setting value (08:30 CT = 09:30 ET = 570 mins).
+        var WORK_START = timeStrToMins(SETTINGS.workingHoursStart || '08:30') + ET_TO_CT;
+        var WORK_END   = timeStrToMins(SETTINGS.workingHoursEnd   || '18:00');
 
         var now          = new Date();
         var todayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1121,7 +1127,7 @@
         weekdays.forEach(function (day) {
           if (slots.length >= MAX_SLOTS) return;
 
-          // Only blocks with pinned day + time + duration
+          // Only blocks with a pinned day + time + duration
           var booked = RECURRING_BLOCKS
             .filter(function (b) {
               return b.active
@@ -1153,16 +1159,36 @@
             });
           }
 
-          // Filter by minimum slot length
+          // Drop gaps shorter than the minimum slot length
           free = free.filter(function (sl) { return (sl.end - sl.start) >= MIN_SLOT; });
 
+          // FIX 1: cap each offered slot at 90 min; emit at most 2 per gap
           free.forEach(function (sl) {
             if (slots.length >= MAX_SLOTS) return;
-            slots.push({
-              label:   DAY_LABEL[day.dow],
-              startCT: sl.start - ET_TO_CT,
-              endCT:   sl.end   - ET_TO_CT
-            });
+            var gap = sl.end - sl.start;
+
+            if (gap <= MAX_SLOT) {
+              // Gap fits within 90 min - emit as-is
+              slots.push({ label:   DAY_LABEL[day.dow],
+                           startCT: sl.start - ET_TO_CT,
+                           endCT:   sl.end   - ET_TO_CT });
+            } else {
+              // First offered slot: gap start to gap start + 90 min
+              slots.push({ label:   DAY_LABEL[day.dow],
+                           startCT:  sl.start            - ET_TO_CT,
+                           endCT:   (sl.start + MAX_SLOT) - ET_TO_CT });
+
+              // Optional second slot: 2 hrs after gap start, if it fits
+              if (slots.length < MAX_SLOTS) {
+                var s2 = sl.start + GAP_STEP;
+                var e2 = s2 + MAX_SLOT;
+                if (e2 <= sl.end) {
+                  slots.push({ label:   DAY_LABEL[day.dow],
+                               startCT: s2 - ET_TO_CT,
+                               endCT:   e2 - ET_TO_CT });
+                }
+              }
+            }
           });
         });
 
