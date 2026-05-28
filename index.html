@@ -226,6 +226,43 @@
       border-color: var(--cardinal);
     }
 
+    /* ── Home action buttons ────────────────────────────────────────────────── */
+    .home-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .home-btn {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--white);
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .home-btn-cardinal              { background: var(--cardinal); }
+    .home-btn-cardinal:hover        { background: #a80d32;         }
+    .home-btn-lapis                 { background: var(--lapis);    }
+    .home-btn-lapis:hover           { background: #0f3f57;         }
+
+    .home-copy-feedback {
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--mint);
+      visibility: hidden;
+      min-width: 56px;
+    }
+
     /* ── List view ─────────────────────────────────────────────────────────── */
     .list-summary {
       font-size: 13px;
@@ -295,6 +332,65 @@
     }
     .status-dot.on  { background: var(--mint);     }
     .status-dot.off { background: var(--gray-200); }
+
+    /* ── Workstreams Copilot section ────────────────────────────────────── */
+    .ws-copilot-section {
+      max-width: 720px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .ws-copilot-heading {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--space-cadet);
+      margin: 0 0 6px;
+    }
+
+    .ws-copilot-sub {
+      font-family: 'Lato', sans-serif;
+      font-size: 13px;
+      color: var(--gray-600);
+      margin: 0 0 16px;
+      line-height: 1.5;
+    }
+
+    .ws-copilot-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .ws-copilot-count {
+      font-family: 'Lato', sans-serif;
+      font-size: 12px;
+      color: var(--gray-600);
+    }
+
+    .ws-prompt-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: monospace;
+      font-size: 13px;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 12px;
+      resize: vertical;
+      color: var(--space-cadet);
+      background: var(--white);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .ws-copilot-copy-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
     /* ── Workstreams editor ──────────────────────────────────────────────── */
     .ws-header {
@@ -902,6 +998,226 @@
           }, 0);
       }
 
+      // ── Output action helpers ────────────────────────────────────────────
+
+      function timeStrToMins(t) {
+        if (!t) return null;
+        var p = t.split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+      }
+
+      function minsToTimeDisplay(mins) {
+        var h    = Math.floor(mins / 60);
+        var m    = mins % 60;
+        var h12  = h % 12 || 12;
+        var mStr = m < 10 ? '0' + m : String(m);
+        return h12 + ':' + mStr;
+      }
+
+      function formatSlotRange(startMins, endMins) {
+        // startMins/endMins are in CT (already converted)
+        var startIsAM = Math.floor(startMins / 60) < 12;
+        var endIsAM   = Math.floor(endMins   / 60) < 12;
+        var s = minsToTimeDisplay(startMins);
+        var e = minsToTimeDisplay(endMins);
+        if (startIsAM && !endIsAM) return s + 'a-' + e + 'p';  // cross noon
+        if (!endIsAM)              return s + '-'  + e + 'p';  // both PM
+        return                            s + '-'  + e + 'a';  // both AM
+      }
+
+      function copyToClipboard(text, feedbackEl) {
+        function showFeedback() {
+          feedbackEl.textContent    = 'Copied!';
+          feedbackEl.style.visibility = 'visible';
+          setTimeout(function () {
+            feedbackEl.style.visibility = 'hidden';
+          }, 2000);
+        }
+        function fallback() {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); showFeedback(); } catch (e) {}
+          document.body.removeChild(ta);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(showFeedback).catch(fallback);
+        } else {
+          fallback();
+        }
+      }
+
+      function formatHoursSnapshotText() {
+        var sub   = computeBlockSubtotal();
+        var total = computeWeeklyHours();
+        var gap   = (SETTINGS.weeklyTargetHours || 40) - total;
+        return 'Recurring load: ' + total.toFixed(1) + ' hrs this week.'
+          + ' Target ' + (SETTINGS.weeklyTargetHours || 40) + '.'
+          + ' Open for new work: ' + gap.toFixed(1) + ' hrs.\n'
+          + 'Breakdown: Recurring blocks ' + sub.toFixed(1)
+          + ', Email '  + SETTINGS_HOURS_CONTRIB.emailHoursPerWeek.toFixed(1)
+          + ', Ad-hoc ' + SETTINGS_HOURS_CONTRIB.adHocHoursPerWeek.toFixed(1)
+          + ', Family ' + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek.toFixed(1) + '.';
+      }
+
+      function computeAvailableSlots() {
+        var WORK_START = 510;   // 08:30 ET in mins from midnight
+        var WORK_END   = 1080;  // 18:00 ET in mins from midnight
+        var ET_TO_CT   = 60;    // subtract to convert ET display to CT display
+        var MIN_SLOT   = 60;    // minimum slot length in minutes
+        var MAX_SLOTS  = 8;
+
+        var now          = new Date();
+        var todayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var nowLocalMins = now.getHours() * 60 + now.getMinutes();
+
+        // Collect next 7 weekdays starting from today
+        var weekdays = [];
+        for (var offset = 0; weekdays.length < 7; offset++) {
+          var d   = new Date(todayStart);
+          d.setDate(todayStart.getDate() + offset);
+          var dow = d.getDay();
+          if (dow !== 0 && dow !== 6) {
+            weekdays.push({ dow: dow, isToday: offset === 0 });
+          }
+        }
+
+        var DAY_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var slots     = [];
+
+        weekdays.forEach(function (day) {
+          if (slots.length >= MAX_SLOTS) return;
+
+          // Only blocks with pinned day + time + duration
+          var booked = RECURRING_BLOCKS
+            .filter(function (b) {
+              return b.active
+                && b.dayOfWeek === day.dow
+                && b.startTime
+                && b.duration > 0;
+            })
+            .map(function (b) {
+              var s = timeStrToMins(b.startTime);
+              return { start: s, end: s + b.duration };
+            })
+            .sort(function (a, b) { return a.start - b.start; });
+
+          // Subtract booked intervals from work window
+          var free   = [];
+          var cursor = WORK_START;
+          booked.forEach(function (bk) {
+            var bkS = Math.max(bk.start, WORK_START);
+            var bkE = Math.min(bk.end,   WORK_END);
+            if (bkS > cursor) free.push({ start: cursor, end: bkS });
+            if (bkE > cursor) cursor = bkE;
+          });
+          if (cursor < WORK_END) free.push({ start: cursor, end: WORK_END });
+
+          // For today: skip slots whose CT start is already past
+          if (day.isToday) {
+            free = free.filter(function (sl) {
+              return (sl.start - ET_TO_CT) > nowLocalMins;
+            });
+          }
+
+          // Filter by minimum slot length
+          free = free.filter(function (sl) { return (sl.end - sl.start) >= MIN_SLOT; });
+
+          free.forEach(function (sl) {
+            if (slots.length >= MAX_SLOTS) return;
+            slots.push({
+              label:   DAY_LABEL[day.dow],
+              startCT: sl.start - ET_TO_CT,
+              endCT:   sl.end   - ET_TO_CT
+            });
+          });
+        });
+
+        return slots;
+      }
+
+      function formatAvailabilityText(slots) {
+        if (!slots.length) return 'No open slots found in the next 7 weekdays.';
+        var lines = ['Any of these work (CT)?'];
+        slots.forEach(function (sl) {
+          lines.push(sl.label + ' ' + formatSlotRange(sl.startCT, sl.endCT));
+        });
+        return lines.join('\n');
+      }
+
+      function minsToOutlookTime(mins) {
+        var h      = Math.floor(mins / 60);
+        var m      = mins % 60;
+        var suffix = h >= 12 ? 'PM' : 'AM';
+        var h12    = h % 12 || 12;
+        var mStr   = m < 10 ? '0' + m : String(m);
+        return h12 + ':' + mStr + ' ' + suffix;
+      }
+
+      function generateCopilotPrompt() {
+        var FULL_DAYS      = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var ELIGIBLE_CAD   = ['daily', 'weekly', 'biweekly'];
+
+        var active         = RECURRING_BLOCKS.filter(function (b) { return b.active; });
+        var eligible       = active.filter(function (b) { return ELIGIBLE_CAD.indexOf(b.cadence) !== -1; });
+        var tooComplex     = active.filter(function (b) { return ELIGIBLE_CAD.indexOf(b.cadence) === -1; });
+        var processable    = eligible.filter(function (b) { return b.startTime && b.duration > 0; });
+        var missingTime    = eligible.filter(function (b) { return !b.startTime || !(b.duration > 0); });
+
+        var lines = [];
+        lines.push('I need you to add or verify recurring calendar events on my Outlook calendar. For each event below, check if a similar event already exists (matching by title and recurrence pattern). If it does NOT exist, create it. If it does exist, skip it. Report back which were created versus skipped.');
+        lines.push('');
+        lines.push('Default reminder: 10 minutes before. Time zone: Eastern Time. Default reminder method: popup.');
+        lines.push('');
+        lines.push('Events to add or verify:');
+        lines.push('');
+
+        processable.forEach(function (b, i) {
+          var recurrence;
+          if (b.cadence === 'daily') {
+            recurrence = 'Daily Mon-Fri';
+          } else if (b.cadence === 'weekly') {
+            recurrence = 'Weekly on ' + (b.dayOfWeek !== null ? FULL_DAYS[b.dayOfWeek] : 'TBD');
+          } else {
+            recurrence = 'Every other ' + (b.dayOfWeek !== null ? FULL_DAYS[b.dayOfWeek] : 'TBD');
+          }
+
+          var startMins = timeStrToMins(b.startTime);
+          var endMins   = startMins + b.duration;
+
+          lines.push((i + 1) + '. ' + b.name);
+          lines.push('   Recurrence: ' + recurrence);
+          lines.push('   Time: ' + minsToOutlookTime(startMins) + ' - ' + minsToOutlookTime(endMins) + ' ET');
+          lines.push('   Category: ' + b.category);
+          if (b.notes && b.notes.trim()) {
+            lines.push('   Notes: ' + b.notes.trim());
+          }
+          lines.push('');
+        });
+
+        if (tooComplex.length) {
+          lines.push('EXCLUDED (monthly/quarterly cadence - add manually):');
+          tooComplex.forEach(function (b) {
+            lines.push('- ' + b.name + ' (' + cadenceLabel(b.cadence) + ')');
+          });
+          lines.push('');
+        }
+
+        if (missingTime.length) {
+          lines.push('EXCLUDED (missing time data - update in Workstreams first):');
+          missingTime.forEach(function (b) {
+            lines.push('- ' + b.name);
+          });
+          lines.push('');
+        }
+
+        lines.push('Total: ' + processable.length + ' events to process. Please add only ones not already on my calendar. Report back what was created vs skipped.');
+
+        return lines.join('\n');
+      }
+
       // ── Home view renderer ────────────────────────────────────────────────
 
       function renderHomeView() {
@@ -940,7 +1256,13 @@
           + ' &middot; Family pickups: ' + SETTINGS_HOURS_CONTRIB.familyPickupHoursPerWeek.toFixed(1);
 
         container.innerHTML =
-          '<div class="home-card ' + bandClass + '">'
+          '<div class="home-actions">'
+          + '<button class="home-btn home-btn-cardinal" id="home-copy-hours">Copy Hours Snapshot</button>'
+          + '<span  class="home-copy-feedback" id="home-hours-fb"></span>'
+          + '<button class="home-btn home-btn-lapis"    id="home-copy-avail">Copy Availability</button>'
+          + '<span  class="home-copy-feedback" id="home-avail-fb"></span>'
+          + '</div>'
+          + '<div class="home-card ' + bandClass + '">'
           + '<p class="big-number">'    + total.toFixed(1)   + '</p>'
           + '<p class="target-label">of ' + target + ' target</p>'
           + '<p class="band-label">'    + bandLabel          + '</p>'
@@ -948,11 +1270,26 @@
           + '</div>'
           + '<div class="nav-tiles">' + tiles + '</div>';
 
-        // Wire tile clicks through the existing showView
+        // Wire tile clicks
         container.querySelectorAll('.nav-tile[data-view]').forEach(function (btn) {
           btn.addEventListener('click', function () {
             showView(btn.dataset.view);
           });
+        });
+
+        // Wire copy buttons
+        document.getElementById('home-copy-hours').addEventListener('click', function () {
+          copyToClipboard(
+            formatHoursSnapshotText(),
+            document.getElementById('home-hours-fb')
+          );
+        });
+
+        document.getElementById('home-copy-avail').addEventListener('click', function () {
+          copyToClipboard(
+            formatAvailabilityText(computeAvailableSlots()),
+            document.getElementById('home-avail-fb')
+          );
         });
       }
 
@@ -1104,6 +1441,10 @@
         var container = document.getElementById('view-workstreams');
         if (!container) return;
 
+        var eligibleCount = RECURRING_BLOCKS.filter(function (b) {
+          return b.active && ['daily','weekly','biweekly'].indexOf(b.cadence) !== -1;
+        }).length;
+
         container.innerHTML =
           '<h2>Workstreams</h2>'
           + '<div class="ws-header">'
@@ -1112,6 +1453,19 @@
           + '</div>'
           + '<div class="ws-cards">'
           + RECURRING_BLOCKS.map(buildBlockCardHTML).join('')
+          + '</div>'
+          + '<div class="ws-copilot-section">'
+          + '<h3 class="ws-copilot-heading">Push to Outlook Calendar</h3>'
+          + '<p class="ws-copilot-sub">Generate a prompt for Microsoft 365 Copilot in Outlook. Paste into Copilot and it will check your calendar and create only the missing events.</p>'
+          + '<div class="ws-copilot-controls">'
+          + '<button class="ws-add-btn" id="ws-gen-prompt">Generate Copilot Prompt</button>'
+          + '<span class="ws-copilot-count">Will process ' + eligibleCount + ' active blocks</span>'
+          + '</div>'
+          + '<textarea id="ws-prompt-output" class="ws-prompt-textarea" rows="16" readonly style="display:none;"></textarea>'
+          + '<div class="ws-copilot-copy-row" id="ws-copy-row" style="display:none;">'
+          + '<button class="home-btn home-btn-lapis" id="ws-copy-prompt">Copy to Clipboard</button>'
+          + '<span class="home-copy-feedback" id="ws-copy-fb"></span>'
+          + '</div>'
           + '</div>';
 
         // Add block
@@ -1212,6 +1566,29 @@
             renderWorkstreamsView();
             renderHomeView();
             renderListView();
+          });
+        }
+
+        // Generate Copilot Prompt
+        var genPromptBtn = document.getElementById('ws-gen-prompt');
+        if (genPromptBtn) {
+          genPromptBtn.addEventListener('click', function () {
+            var textarea = document.getElementById('ws-prompt-output');
+            var copyRow  = document.getElementById('ws-copy-row');
+            textarea.value        = generateCopilotPrompt();
+            textarea.style.display = 'block';
+            copyRow.style.display  = 'flex';
+            textarea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          });
+        }
+
+        var copyPromptBtn = document.getElementById('ws-copy-prompt');
+        if (copyPromptBtn) {
+          copyPromptBtn.addEventListener('click', function () {
+            copyToClipboard(
+              document.getElementById('ws-prompt-output').value,
+              document.getElementById('ws-copy-fb')
+            );
           });
         }
       }
